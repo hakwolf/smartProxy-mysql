@@ -22,8 +22,8 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/flike/kingshard/core/hack"
-	"github.com/flike/kingshard/sqltypes"
+	"github.com/hakwolf/smartProxy-mysql/core/hack"
+	"github.com/hakwolf/smartProxy-mysql/sqltypes"
 )
 
 // Instructions for creating new types: If a type

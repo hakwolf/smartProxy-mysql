@@ -20,8 +20,8 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	"github.com/flike/kingshard/config"
-	"github.com/flike/kingshard/sqlparser"
+	"github.com/hakwolf/smartProxy-mysql/config"
+	"github.com/hakwolf/smartProxy-mysql/sqlparser"
 )
 
 func TestParseRule(t *testing.T) {

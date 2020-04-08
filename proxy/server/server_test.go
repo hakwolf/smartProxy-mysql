@@ -19,8 +19,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/flike/kingshard/backend"
-	"github.com/flike/kingshard/config"
+	"github.com/hakwolf/smartProxy-mysql/backend"
+	"github.com/hakwolf/smartProxy-mysql/config"
 )
 
 var testServerOnce sync.Once

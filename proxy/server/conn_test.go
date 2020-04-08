@@ -17,7 +17,7 @@ package server
 import (
 	"testing"
 
-	. "github.com/flike/kingshard/mysql"
+	. "github.com/hakwolf/smartProxy-mysql/mysql"
 )
 
 func TestConn_Handshake(t *testing.T) {

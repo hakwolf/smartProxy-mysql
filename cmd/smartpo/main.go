@@ -24,11 +24,11 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/flike/kingshard/config"
-	"github.com/flike/kingshard/core/golog"
-	"github.com/flike/kingshard/monitor"
-	"github.com/flike/kingshard/proxy/server"
-	"github.com/flike/kingshard/web"
+	"github.com/hakwolf/SmartProxy-mysql/config"
+	"github.com/hakwolf/SmartProxy-mysql/core/golog"
+	"github.com/hakwolf/SmartProxy-mysql/monitor"
+	"github.com/hakwolf/SmartProxy-mysql/proxy/server"
+	"github.com/hakwolf/SmartProxy-mysql/web"
 )
 
 var configFile *string = flag.String("config", "/etc/ks.yaml", "kingshard config file")

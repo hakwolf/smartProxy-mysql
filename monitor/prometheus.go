@@ -20,8 +20,8 @@ import (
 	"time"
 	"strconv"
 
-	"github.com/flike/kingshard/proxy/server"
-	"github.com/flike/kingshard/core/golog"
+	"github.com/hakwolf/smartProxy-mysql/proxy/server"
+	"github.com/hakwolf/smartProxy-mysql/core/golog"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )

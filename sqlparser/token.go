@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/flike/kingshard/sqltypes"
+	"github.com/hakwolf/smartProxy-mysql/sqltypes"
 )
 
 const EOFCHAR = 0x100

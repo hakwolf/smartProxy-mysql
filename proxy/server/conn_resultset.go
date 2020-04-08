@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/flike/kingshard/core/errors"
-	"github.com/flike/kingshard/core/hack"
-	"github.com/flike/kingshard/mysql"
+	"github.com/hakwolf/smartProxy-mysql/core/errors"
+	"github.com/hakwolf/smartProxy-mysql/core/hack"
+	"github.com/hakwolf/smartProxy-mysql/mysql"
 )
 
 func formatValue(value interface{}) ([]byte, error) {

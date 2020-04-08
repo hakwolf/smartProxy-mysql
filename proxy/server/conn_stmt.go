@@ -21,10 +21,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/flike/kingshard/core/errors"
-	"github.com/flike/kingshard/core/golog"
-	"github.com/flike/kingshard/mysql"
-	"github.com/flike/kingshard/sqlparser"
+	"github.com/hakwolf/smartProxy-mysql/core/errors"
+	"github.com/hakwolf/smartProxy-mysql/core/golog"
+	"github.com/hakwolf/smartProxy-mysql/mysql"
+	"github.com/hakwolf/smartProxy-mysql/sqlparser"
 )
 
 var paramFieldData []byte

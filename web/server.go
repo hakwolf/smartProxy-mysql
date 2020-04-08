@@ -14,9 +14,9 @@
 package web
 
 import (
-	"github.com/flike/kingshard/config"
-	"github.com/flike/kingshard/core/golog"
-	"github.com/flike/kingshard/proxy/server"
+	"github.com/hakwolf/smartProxy-mysql/config"
+	"github.com/hakwolf/smartProxy-mysql/core/golog"
+	"github.com/hakwolf/smartProxy-mysql/proxy/server"
 	"github.com/labstack/echo"
 	"github.com/labstack/gommon/log"
 	//"github.com/labstack/echo/engine/standard"

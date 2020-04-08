@@ -15,8 +15,8 @@
 package server
 
 import (
-	"github.com/flike/kingshard/backend"
-	"github.com/flike/kingshard/mysql"
+	"github.com/hakwolf/smartProxy-mysql/backend"
+	"github.com/hakwolf/smartProxy-mysql/mysql"
 )
 
 func (c *ClientConn) isInTransaction() bool {
