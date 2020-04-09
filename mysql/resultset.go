@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/flike/kingshard/core/hack"
+	"github.com/hakwolf/smartProxy-mysql/core/hack"
 )
 
 type RowData []byte

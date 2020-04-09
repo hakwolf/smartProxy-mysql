@@ -18,7 +18,7 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/flike/kingshard/core/hack"
+	"github.com/hakwolf/smartProxy-mysql/core/hack"
 )
 
 func TestCalcPassword(t *testing.T) {

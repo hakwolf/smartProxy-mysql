@@ -1,4 +1,4 @@
-module github.com/flike/kingshard
+module github.com/hakwolf/smartProxy-mysql
 
 go 1.13
 

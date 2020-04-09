@@ -21,9 +21,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/flike/kingshard/config"
-	"github.com/flike/kingshard/core/errors"
-	"github.com/flike/kingshard/core/golog"
+	"github.com/hakwolf/smartProxy-mysql/config"
+	"github.com/hakwolf/smartProxy-mysql/core/errors"
+	"github.com/hakwolf/smartProxy-mysql/core/golog"
 )
 
 const (

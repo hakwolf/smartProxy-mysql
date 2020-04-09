@@ -17,7 +17,7 @@ package backend
 import (
 	"testing"
 
-	"github.com/flike/kingshard/config"
+	"github.com/hakwolf/smartProxy-mysql/config"
 )
 
 func TestParse(t *testing.T) {

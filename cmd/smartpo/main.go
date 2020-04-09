@@ -24,11 +24,11 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/hakwolf/SmartProxy-mysql/config"
-	"github.com/hakwolf/SmartProxy-mysql/core/golog"
-	"github.com/hakwolf/SmartProxy-mysql/monitor"
-	"github.com/hakwolf/SmartProxy-mysql/proxy/server"
-	"github.com/hakwolf/SmartProxy-mysql/web"
+	"github.com/hakwolf/smartProxy-mysql/config"
+	"github.com/hakwolf/smartProxy-mysql/core/golog"
+	"github.com/hakwolf/smartProxy-mysql/monitor"
+	"github.com/hakwolf/smartProxy-mysql/proxy/server"
+	"github.com/hakwolf/smartProxy-mysql/web"
 )
 
 var configFile *string = flag.String("config", "/etc/ks.yaml", "kingshard config file")
@@ -47,12 +47,12 @@ var (
 )
 
 const banner string = `
-    __   _                  __                   __
-   / /__(_)___  ____ ______/ /_  ____ __________/ /
-  / //_/ / __ \/ __ \/ ___/ __ \ / __\/ ___/ __  /
- / ,< / / / / / /_/ (__  ) / / / /_/ / /  / /_/ /
-/_/|_/_/_/ /_/\__, /____/_/ /_/\__,_/_/   \__,_/
-             /____/
+                                  __                   
+  ______  _____  _____  _______ _/  |_ ______    ____  
+ /  ___/ /     \ \__  \ \_  __ \\   __\\____ \  /  _ \ 
+ \___ \ |  Y Y  \ / __ \_|  | \/ |  |  |  |_> >(  <_> )
+/____  >|__|_|  /(____  /|__|    |__|  |   __/  \____/ 
+     \/       \/      \/               |__|            
 `
 
 func main() {

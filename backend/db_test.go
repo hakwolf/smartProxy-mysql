@@ -1,7 +1,7 @@
 package backend
 
 import (
-	. "github.com/flike/kingshard/backend"
+	//. "github.com/hakwolf/smartProxy-mysql/backend"
 
 	"testing"
 )

@@ -18,7 +18,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/flike/kingshard/core/errors"
+	"github.com/hakwolf/smartProxy-mysql/core/errors"
 )
 
 func Gcd(ary []int) int {

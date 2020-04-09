@@ -251,3 +251,10 @@
 2020/04/06 17:56:11 - INFO - server.go:[300] - [server] "NewServer" "Server running" "netProto=tcp|address=0.0.0.0:5000" conn_id=0
 2020/04/06 17:56:11 - INFO - server.go:[43] - [web] "NewApiServer" "Api Server running" "netProto=http|address=0.0.0.0:9797" conn_id=0
 2020/04/06 17:56:11 - INFO - prometheus.go:[41] - [prometheus] "Run" "Prometheus running" "address=0.0.0.0:7080" conn_id=0
+2020/04/09 22:15:03 - INFO - server.go:[300] - [server] "NewServer" "Server running" "netProto=tcp|address=0.0.0.0:5000" conn_id=0
+2020/04/09 22:15:03 - INFO - server.go:[43] - [web] "NewApiServer" "Api Server running" "netProto=http|address=0.0.0.0:9797" conn_id=0
+2020/04/09 22:15:03 - INFO - prometheus.go:[41] - [prometheus] "Run" "Prometheus running" "address=0.0.0.0:7080" conn_id=0
+2020/04/09 22:25:51 - INFO - main.go:[143] - [main] "main" "Got signal" "signal=interrupt" conn_id=0
+2020/04/09 22:26:06 - INFO - server.go:[300] - [server] "NewServer" "Server running" "netProto=tcp|address=0.0.0.0:5000" conn_id=0
+2020/04/09 22:26:06 - INFO - server.go:[43] - [web] "NewApiServer" "Api Server running" "netProto=http|address=0.0.0.0:9797" conn_id=0
+2020/04/09 22:26:06 - INFO - prometheus.go:[41] - [prometheus] "Run" "Prometheus running" "address=0.0.0.0:7080" conn_id=0
