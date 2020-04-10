@@ -39,9 +39,9 @@ SmartPo is a high-performance proxy for MySQL powered by Go. Just like other mys
   7. run smartPo (./bin/smartPo -config=etc/ks.yaml)
 ```
 
-# Details of kingshard
+# Details of SmartPo
 
-[1.How to use kingshard building a MySQL cluster](./doc/KingDoc/how_to_use_kingshard_EN.md)
+[1.How to use SmartPo building a MySQL cluster](./doc/KingDoc/how_to_use_kingshard_EN.md)
 
 ## License
 
