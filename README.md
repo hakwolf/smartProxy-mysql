@@ -1,4 +1,4 @@
-#  kingshard [中文主页](README_ZH.md)
+#  SmartPo [中文主页](README_ZH.md)
 
 [![Build Status](https://travis-ci.org/flike/kingshard.svg?branch=master)](https://travis-ci.org/flike/kingshard)
 
@@ -45,4 +45,4 @@ kingshard is a high-performance proxy for MySQL powered by Go. Just like other m
 
 ## License
 
-kingshard is under the Apache 2.0 license. See the [LICENSE](./doc/License) directory for details.
+SmartPo is under the Apache 2.0 license. See the [LICENSE](./doc/License) directory for details.
