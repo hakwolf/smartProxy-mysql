@@ -217,6 +217,8 @@ func (p *PacketIO) WritePacketBatch(total, data []byte, direct bool) ([]byte, er
 	data[2] = byte(length >> 16)
 	data[3] = p.Sequence
 
+	fmt.Println(data)
+
 	total = append(total, data...)
 	p.Sequence++
 

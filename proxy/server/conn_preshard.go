@@ -33,17 +33,17 @@ type ExecuteDB struct {
 	sql      string
 }
 
-func (c *ClientConn) isBlacklistSql(sql string) bool {
+func (cc *ClientConn) isBlacklistSql(sql string) bool {
 	fingerprint := mysql.GetFingerprint(sql)
 	md5 := mysql.GetMd5(fingerprint)
-	if _, ok := c.proxy.blacklistSqls[c.proxy.blacklistSqlsIndex].sqls[md5]; ok {
+	if _, ok := cc.proxy.blacklistSqls[cc.proxy.blacklistSqlsIndex].sqls[md5]; ok {
 		return true
 	}
 	return false
 }
 
 //preprocessing sql before parse sql
-func (c *ClientConn) preHandleShard(sql string) (bool, error) {
+func (cc *ClientConn) preHandleShard(sql string) (bool, error) {
 	var rs []*mysql.Result
 	var err error
 	var executeDB *ExecuteDB
@@ -52,11 +52,11 @@ func (c *ClientConn) preHandleShard(sql string) (bool, error) {
 		return false, errors.ErrCmdUnsupport
 	}
 	//filter the blacklist sql
-	if c.proxy.blacklistSqls[c.proxy.blacklistSqlsIndex].sqlsLen != 0 {
-		if c.isBlacklistSql(sql) {
+	if cc.proxy.blacklistSqls[cc.proxy.blacklistSqlsIndex].sqlsLen != 0 {
+		if cc.isBlacklistSql(sql) {
 			golog.OutputSql("Forbidden", "%s->%s:%s",
-				c.c.RemoteAddr(),
-				c.proxy.addr,
+				cc.c.RemoteAddr(),
+				cc.proxy.addr,
 				sql,
 			)
 			err := mysql.NewError(mysql.ER_UNKNOWN_ERROR, "sql in blacklist.")
@@ -70,16 +70,16 @@ func (c *ClientConn) preHandleShard(sql string) (bool, error) {
 		return false, errors.ErrCmdUnsupport
 	}
 
-	if c.isInTransaction() {
-		executeDB, err = c.GetTransExecDB(tokens, sql)
+	if cc.isInTransaction() {
+		executeDB, err = cc.GetTransExecDB(tokens, sql)
 	} else {
-		executeDB, err = c.GetExecDB(tokens, sql)
+		executeDB, err = cc.GetExecDB(tokens, sql)
 	}
 
 	if err != nil {
 		//this SQL doesn't need execute in the backend.
 		if err == errors.ErrIgnoreSQL {
-			err = c.writeOK(nil)
+			err = cc.writeOK(nil)
 			if err != nil {
 				return false, err
 			}
@@ -92,13 +92,13 @@ func (c *ClientConn) preHandleShard(sql string) (bool, error) {
 		return false, nil
 	}
 	//get connection in DB
-	conn, err := c.getBackendConn(executeDB.ExecNode, executeDB.IsSlave)
-	defer c.closeConn(conn, false)
+	conn, err := cc.getBackendConn(executeDB.ExecNode, executeDB.IsSlave)
+	defer cc.closeConn(conn, false)
 	if err != nil {
 		return false, err
 	}
 	//execute.sql may be rewritten in getShowExecDB
-	rs, err = c.executeInNode(conn, executeDB.sql, nil)
+	rs, err = cc.executeInNode(conn, executeDB.sql, nil)
 	if err != nil {
 		return false, err
 	}
@@ -109,13 +109,13 @@ func (c *ClientConn) preHandleShard(sql string) (bool, error) {
 		return false, mysql.NewError(mysql.ER_UNKNOWN_ERROR, msg)
 	}
 
-	c.lastInsertId = int64(rs[0].InsertId)
-	c.affectedRows = int64(rs[0].AffectedRows)
+	cc.lastInsertId = int64(rs[0].InsertId)
+	cc.affectedRows = int64(rs[0].AffectedRows)
 
 	if rs[0].Resultset != nil {
-		err = c.writeResultset(c.status, rs[0].Resultset)
+		err = cc.writeResultset(cc.status, rs[0].Resultset)
 	} else {
-		err = c.writeOK(rs[0])
+		err = cc.writeOK(rs[0])
 	}
 
 	if err != nil {
@@ -125,7 +125,7 @@ func (c *ClientConn) preHandleShard(sql string) (bool, error) {
 	return true, nil
 }
 
-func (c *ClientConn) GetTransExecDB(tokens []string, sql string) (*ExecuteDB, error) {
+func (cc *ClientConn) GetTransExecDB(tokens []string, sql string) (*ExecuteDB, error) {
 	var err error
 	tokensLen := len(tokens)
 	executeDB := new(ExecuteDB)
@@ -137,14 +137,14 @@ func (c *ClientConn) GetTransExecDB(tokens []string, sql string) (*ExecuteDB, er
 	if 2 <= tokensLen {
 		if tokens[0][0] == mysql.COMMENT_PREFIX {
 			nodeName := strings.Trim(tokens[0], mysql.COMMENT_STRING)
-			if c.schema.nodes[nodeName] != nil {
-				executeDB.ExecNode = c.schema.nodes[nodeName]
+			if cc.schema.nodes[nodeName] != nil {
+				executeDB.ExecNode = cc.schema.nodes[nodeName]
 			}
 		}
 	}
 
 	if executeDB.ExecNode == nil {
-		executeDB, err = c.GetExecDB(tokens, sql)
+		executeDB, err = cc.GetExecDB(tokens, sql)
 		if err != nil {
 			return nil, err
 		}
@@ -153,33 +153,33 @@ func (c *ClientConn) GetTransExecDB(tokens []string, sql string) (*ExecuteDB, er
 		}
 		return executeDB, nil
 	}
-	if len(c.txConns) == 1 && c.txConns[executeDB.ExecNode] == nil {
+	if len(cc.txConns) == 1 && cc.txConns[executeDB.ExecNode] == nil {
 		return nil, errors.ErrTransInMulti
 	}
 	return executeDB, nil
 }
 
 //if sql need shard return nil, else return the unshard db
-func (c *ClientConn) GetExecDB(tokens []string, sql string) (*ExecuteDB, error) {
+func (cc *ClientConn) GetExecDB(tokens []string, sql string) (*ExecuteDB, error) {
 	tokensLen := len(tokens)
 	if 0 < tokensLen {
 		tokenId, ok := mysql.PARSE_TOKEN_MAP[strings.ToLower(tokens[0])]
 		if ok == true {
 			switch tokenId {
 			case mysql.TK_ID_SELECT:
-				return c.getSelectExecDB(sql, tokens, tokensLen)
+				return cc.getSelectExecDB(sql, tokens, tokensLen)
 			case mysql.TK_ID_DELETE:
-				return c.getDeleteExecDB(sql, tokens, tokensLen)
+				return cc.getDeleteExecDB(sql, tokens, tokensLen)
 			case mysql.TK_ID_INSERT, mysql.TK_ID_REPLACE:
-				return c.getInsertOrReplaceExecDB(sql, tokens, tokensLen)
+				return cc.getInsertOrReplaceExecDB(sql, tokens, tokensLen)
 			case mysql.TK_ID_UPDATE:
-				return c.getUpdateExecDB(sql, tokens, tokensLen)
+				return cc.getUpdateExecDB(sql, tokens, tokensLen)
 			case mysql.TK_ID_SET:
-				return c.getSetExecDB(sql, tokens, tokensLen)
+				return cc.getSetExecDB(sql, tokens, tokensLen)
 			case mysql.TK_ID_SHOW:
-				return c.getShowExecDB(sql, tokens, tokensLen)
+				return cc.getShowExecDB(sql, tokens, tokensLen)
 			case mysql.TK_ID_TRUNCATE:
-				return c.getTruncateExecDB(sql, tokens, tokensLen)
+				return cc.getTruncateExecDB(sql, tokens, tokensLen)
 			default:
 				return nil, nil
 			}
@@ -187,20 +187,20 @@ func (c *ClientConn) GetExecDB(tokens []string, sql string) (*ExecuteDB, error) 
 	}
 	executeDB := new(ExecuteDB)
 	executeDB.sql = sql
-	err := c.setExecuteNode(tokens, tokensLen, executeDB)
+	err := cc.setExecuteNode(tokens, tokensLen, executeDB)
 	if err != nil {
 		return nil, err
 	}
 	return executeDB, nil
 }
 
-func (c *ClientConn) setExecuteNode(tokens []string, tokensLen int, executeDB *ExecuteDB) error {
+func (cc *ClientConn) setExecuteNode(tokens []string, tokensLen int, executeDB *ExecuteDB) error {
 	if 2 <= tokensLen {
 		//for /*node1*/
 		if 1 < len(tokens) && tokens[0][0] == mysql.COMMENT_PREFIX {
 			nodeName := strings.Trim(tokens[0], mysql.COMMENT_STRING)
-			if c.schema.nodes[nodeName] != nil {
-				executeDB.ExecNode = c.schema.nodes[nodeName]
+			if cc.schema.nodes[nodeName] != nil {
+				executeDB.ExecNode = cc.schema.nodes[nodeName]
 			}
 			//for /*node1*/ select
 			if strings.ToLower(tokens[1]) == mysql.TK_STR_SELECT {
@@ -210,24 +210,24 @@ func (c *ClientConn) setExecuteNode(tokens []string, tokensLen int, executeDB *E
 	}
 
 	if executeDB.ExecNode == nil {
-		defaultRule := c.schema.rule.DefaultRule
+		defaultRule := cc.schema.rule.DefaultRule
 		if len(defaultRule.Nodes) == 0 {
 			return errors.ErrNoDefaultNode
 		}
-		executeDB.ExecNode = c.proxy.GetNode(defaultRule.Nodes[0])
+		executeDB.ExecNode = cc.proxy.GetNode(defaultRule.Nodes[0])
 	}
 
 	return nil
 }
 
 //get the execute database for select sql
-func (c *ClientConn) getSelectExecDB(sql string, tokens []string, tokensLen int) (*ExecuteDB, error) {
+func (cc *ClientConn) getSelectExecDB(sql string, tokens []string, tokensLen int) (*ExecuteDB, error) {
 	var ruleDB string
 	executeDB := new(ExecuteDB)
 	executeDB.sql = sql
 	executeDB.IsSlave = true
 
-	schema := c.schema
+	schema := cc.schema
 	router := schema.rule
 	rules := router.Rules
 
@@ -240,7 +240,7 @@ func (c *ClientConn) getSelectExecDB(sql string, tokens []string, tokensLen int)
 					if DBName != "" {
 						ruleDB = DBName
 					} else {
-						ruleDB = c.db
+						ruleDB = cc.db
 					}
 					if router.GetRule(ruleDB, tableName) != router.DefaultRule {
 						return nil, nil
@@ -264,7 +264,7 @@ func (c *ClientConn) getSelectExecDB(sql string, tokens []string, tokensLen int)
 			executeDB.IsSlave = false
 		}
 	}
-	err := c.setExecuteNode(tokens, tokensLen, executeDB)
+	err := cc.setExecuteNode(tokens, tokensLen, executeDB)
 	if err != nil {
 		return nil, err
 	}
@@ -272,11 +272,11 @@ func (c *ClientConn) getSelectExecDB(sql string, tokens []string, tokensLen int)
 }
 
 //get the execute database for delete sql
-func (c *ClientConn) getDeleteExecDB(sql string, tokens []string, tokensLen int) (*ExecuteDB, error) {
+func (cc *ClientConn) getDeleteExecDB(sql string, tokens []string, tokensLen int) (*ExecuteDB, error) {
 	var ruleDB string
 	executeDB := new(ExecuteDB)
 	executeDB.sql = sql
-	schema := c.schema
+	schema := cc.schema
 	router := schema.rule
 	rules := router.Rules
 
@@ -289,7 +289,7 @@ func (c *ClientConn) getDeleteExecDB(sql string, tokens []string, tokensLen int)
 					if DBName != "" {
 						ruleDB = DBName
 					} else {
-						ruleDB = c.db
+						ruleDB = cc.db
 					}
 					if router.GetRule(ruleDB, tableName) != router.DefaultRule {
 						return nil, nil
@@ -301,7 +301,7 @@ func (c *ClientConn) getDeleteExecDB(sql string, tokens []string, tokensLen int)
 		}
 	}
 
-	err := c.setExecuteNode(tokens, tokensLen, executeDB)
+	err := cc.setExecuteNode(tokens, tokensLen, executeDB)
 	if err != nil {
 		return nil, err
 	}
@@ -310,11 +310,11 @@ func (c *ClientConn) getDeleteExecDB(sql string, tokens []string, tokensLen int)
 }
 
 //get the execute database for insert or replace sql
-func (c *ClientConn) getInsertOrReplaceExecDB(sql string, tokens []string, tokensLen int) (*ExecuteDB, error) {
+func (cc *ClientConn) getInsertOrReplaceExecDB(sql string, tokens []string, tokensLen int) (*ExecuteDB, error) {
 	var ruleDB string
 	executeDB := new(ExecuteDB)
 	executeDB.sql = sql
-	schema := c.schema
+	schema := cc.schema
 	router := schema.rule
 	rules := router.Rules
 
@@ -327,7 +327,7 @@ func (c *ClientConn) getInsertOrReplaceExecDB(sql string, tokens []string, token
 					if DBName != "" {
 						ruleDB = DBName
 					} else {
-						ruleDB = c.db
+						ruleDB = cc.db
 					}
 					if router.GetRule(ruleDB, tableName) != router.DefaultRule {
 						return nil, nil
@@ -339,7 +339,7 @@ func (c *ClientConn) getInsertOrReplaceExecDB(sql string, tokens []string, token
 		}
 	}
 
-	err := c.setExecuteNode(tokens, tokensLen, executeDB)
+	err := cc.setExecuteNode(tokens, tokensLen, executeDB)
 	if err != nil {
 		return nil, err
 	}
@@ -348,11 +348,11 @@ func (c *ClientConn) getInsertOrReplaceExecDB(sql string, tokens []string, token
 }
 
 //get the execute database for update sql
-func (c *ClientConn) getUpdateExecDB(sql string, tokens []string, tokensLen int) (*ExecuteDB, error) {
+func (cc *ClientConn) getUpdateExecDB(sql string, tokens []string, tokensLen int) (*ExecuteDB, error) {
 	var ruleDB string
 	executeDB := new(ExecuteDB)
 	executeDB.sql = sql
-	schema := c.schema
+	schema := cc.schema
 	router := schema.rule
 	rules := router.Rules
 
@@ -364,7 +364,7 @@ func (c *ClientConn) getUpdateExecDB(sql string, tokens []string, tokensLen int)
 				if DBName != "" {
 					ruleDB = DBName
 				} else {
-					ruleDB = c.db
+					ruleDB = cc.db
 				}
 				if router.GetRule(ruleDB, tableName) != router.DefaultRule {
 					return nil, nil
@@ -375,7 +375,7 @@ func (c *ClientConn) getUpdateExecDB(sql string, tokens []string, tokensLen int)
 		}
 	}
 
-	err := c.setExecuteNode(tokens, tokensLen, executeDB)
+	err := cc.setExecuteNode(tokens, tokensLen, executeDB)
 	if err != nil {
 		return nil, err
 	}
@@ -384,7 +384,7 @@ func (c *ClientConn) getUpdateExecDB(sql string, tokens []string, tokensLen int)
 }
 
 //get the execute database for set sql
-func (c *ClientConn) getSetExecDB(sql string, tokens []string, tokensLen int) (*ExecuteDB, error) {
+func (cc *ClientConn) getSetExecDB(sql string, tokens []string, tokensLen int) (*ExecuteDB, error) {
 	executeDB := new(ExecuteDB)
 	executeDB.sql = sql
 
@@ -411,7 +411,7 @@ func (c *ClientConn) getSetExecDB(sql string, tokens []string, tokensLen int) (*
 		}
 	}
 
-	err := c.setExecuteNode(tokens, tokensLen, executeDB)
+	err := cc.setExecuteNode(tokens, tokensLen, executeDB)
 	if err != nil {
 		return nil, err
 	}
@@ -422,18 +422,18 @@ func (c *ClientConn) getSetExecDB(sql string, tokens []string, tokensLen int) (*
 //get the execute database for show sql
 //choose slave preferentially
 //tokens[0] is show
-func (c *ClientConn) getShowExecDB(sql string, tokens []string, tokensLen int) (*ExecuteDB, error) {
+func (cc *ClientConn) getShowExecDB(sql string, tokens []string, tokensLen int) (*ExecuteDB, error) {
 	executeDB := new(ExecuteDB)
 	executeDB.IsSlave = true
 	executeDB.sql = sql
 
 	//handle show columns/fields
-	err := c.handleShowColumns(sql, tokens, tokensLen, executeDB)
+	err := cc.handleShowColumns(sql, tokens, tokensLen, executeDB)
 	if err != nil {
 		return nil, err
 	}
 
-	err = c.setExecuteNode(tokens, tokensLen, executeDB)
+	err = cc.setExecuteNode(tokens, tokensLen, executeDB)
 	if err != nil {
 		return nil, err
 	}
@@ -442,7 +442,7 @@ func (c *ClientConn) getShowExecDB(sql string, tokens []string, tokensLen int) (
 }
 
 //handle show columns/fields
-func (c *ClientConn) handleShowColumns(sql string, tokens []string,
+func (cc *ClientConn) handleShowColumns(sql string, tokens []string,
 	tokensLen int, executeDB *ExecuteDB) error {
 	var ruleDB string
 	for i := 0; i < tokensLen; i++ {
@@ -458,9 +458,9 @@ func (c *ClientConn) handleShowColumns(sql string, tokens []string,
 				if i+4 < tokensLen && strings.ToLower(tokens[i+1]) == mysql.TK_STR_FROM {
 					ruleDB = strings.Trim(tokens[i+4], "`")
 				} else {
-					ruleDB = c.db
+					ruleDB = cc.db
 				}
-				showRouter := c.schema.rule
+				showRouter := cc.schema.rule
 				showRule := showRouter.GetRule(ruleDB, tableName)
 				//this SHOW is sharding SQL
 				if showRule.Type != router.DefaultRuleType {
@@ -470,7 +470,7 @@ func (c *ClientConn) handleShowColumns(sql string, tokens []string,
 						nodeName := showRule.Nodes[nodeIndex]
 						tokens[i+2] = fmt.Sprintf("%s_%04d", tableName, tableIndex)
 						executeDB.sql = strings.Join(tokens, " ")
-						executeDB.ExecNode = c.schema.nodes[nodeName]
+						executeDB.ExecNode = cc.schema.nodes[nodeName]
 						return nil
 					}
 				}
@@ -482,11 +482,11 @@ func (c *ClientConn) handleShowColumns(sql string, tokens []string,
 
 //get the execute database for truncate sql
 //sql: TRUNCATE [TABLE] tbl_name
-func (c *ClientConn) getTruncateExecDB(sql string, tokens []string, tokensLen int) (*ExecuteDB, error) {
+func (cc *ClientConn) getTruncateExecDB(sql string, tokens []string, tokensLen int) (*ExecuteDB, error) {
 	var ruleDB string
 	executeDB := new(ExecuteDB)
 	executeDB.sql = sql
-	schema := c.schema
+	schema := cc.schema
 	router := schema.rule
 	rules := router.Rules
 	if len(rules) != 0 && tokensLen >= 2 {
@@ -495,7 +495,7 @@ func (c *ClientConn) getTruncateExecDB(sql string, tokens []string, tokensLen in
 		if DBName != "" {
 			ruleDB = DBName
 		} else {
-			ruleDB = c.db
+			ruleDB = cc.db
 		}
 		if router.GetRule(ruleDB, tableName) != router.DefaultRule {
 			return nil, nil
@@ -503,7 +503,7 @@ func (c *ClientConn) getTruncateExecDB(sql string, tokens []string, tokensLen in
 
 	}
 
-	err := c.setExecuteNode(tokens, tokensLen, executeDB)
+	err := cc.setExecuteNode(tokens, tokensLen, executeDB)
 	if err != nil {
 		return nil, err
 	}

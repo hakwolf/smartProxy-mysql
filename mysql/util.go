@@ -125,6 +125,26 @@ func PutLengthEncodedInt(n uint64) []byte {
 	return nil
 }
 
+func DumpLengthEncodedInt(buffer []byte, n uint64) []byte {
+	switch {
+	case n <= 250:
+		return append(buffer, tinyIntCache[n]...)
+
+	case n <= 0xffff:
+		return append(buffer, 0xfc, byte(n), byte(n>>8))
+
+	case n <= 0xffffff:
+		return append(buffer, 0xfd, byte(n), byte(n>>8), byte(n>>16))
+
+	case n <= 0xffffffffffffffff:
+		return append(buffer, 0xfe, byte(n), byte(n>>8), byte(n>>16), byte(n>>24),
+			byte(n>>32), byte(n>>40), byte(n>>48), byte(n>>56))
+	}
+
+	return buffer
+}
+
+
 func LengthEnodedString(b []byte) ([]byte, bool, int, error) {
 	// Get length
 	num, isNull, n := LengthEncodedInt(b)
@@ -307,7 +327,13 @@ var encodeRef = map[byte]byte{
 	'\\':   '\\',
 }
 
+var tinyIntCache [251][]byte
+
 func init() {
+	for i := 0; i < len(tinyIntCache); i++ {
+		tinyIntCache[i] = []byte{byte(i)}
+	}
+
 	for i := range EncodeMap {
 		EncodeMap[i] = DONTESCAPE
 	}

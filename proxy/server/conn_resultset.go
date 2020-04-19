@@ -15,12 +15,14 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 
 	"github.com/hakwolf/smartProxy-mysql/core/errors"
 	"github.com/hakwolf/smartProxy-mysql/core/hack"
 	"github.com/hakwolf/smartProxy-mysql/mysql"
+	"github.com/pingcap/tidb/server"
 )
 
 func formatValue(value interface{}) ([]byte, error) {
@@ -61,7 +63,7 @@ func formatValue(value interface{}) ([]byte, error) {
 	}
 }
 
-func formatField(field *mysql.Field, value interface{}) error {
+func formatField(field *server.ColumnInfo, value interface{}) error {   //func formatField(field *mysql.Field, value interface{}) error {
 	switch value.(type) {
 	case int8, int16, int32, int64, int:
 		field.Charset = 63
@@ -84,11 +86,12 @@ func formatField(field *mysql.Field, value interface{}) error {
 	return nil
 }
 
-func (c *ClientConn) buildResultset(fields []*mysql.Field, names []string, values [][]interface{}) (*mysql.Resultset, error) {
+//func (cc *ClientConn) buildResultset(fields []*mysql.Field, names []string, values [][]interface{}) (*mysql.Resultset, error) {
+func (cc *ClientConn) buildResultset(fields []*server.ColumnInfo, names []string, values [][]interface{}) (*mysql.Resultset, error) {
 	var ExistFields bool
 	r := new(mysql.Resultset)
 
-	r.Fields = make([]*mysql.Field, len(names))
+	r.Fields = make([]*server.ColumnInfo, len(names))  //r.Fields = make([]*mysql.Field, len(names))
 	r.FieldNames = make(map[string]int, len(names))
 
 	//use the field def that get from true database
@@ -116,10 +119,10 @@ func (c *ClientConn) buildResultset(fields []*mysql.Field, names []string, value
 					r.Fields[j] = fields[j]
 					r.FieldNames[string(r.Fields[j].Name)] = j
 				} else {
-					field := &mysql.Field{}
+					field := &server.ColumnInfo{}  //field := &mysql.Field{}
 					r.Fields[j] = field
 					r.FieldNames[string(r.Fields[j].Name)] = j
-					field.Name = hack.Slice(names[j])
+					field.Name = names[j]  //field.Name = hack.Slice(names[j])
 					if err = formatField(field, value); err != nil {
 						return nil, err
 					}
@@ -142,8 +145,8 @@ func (c *ClientConn) buildResultset(fields []*mysql.Field, names []string, value
 	return r, nil
 }
 
-func (c *ClientConn) writeResultset(status uint16, r *mysql.Resultset) error {
-	c.affectedRows = int64(-1)
+func (cc *ClientConn) writeResultset(status uint16, r *mysql.Resultset) error {
+	cc.affectedRows = int64(-1)
 	total := make([]byte, 0, 4096)
 	data := make([]byte, 4, 512)
 	var err error
@@ -151,39 +154,115 @@ func (c *ClientConn) writeResultset(status uint16, r *mysql.Resultset) error {
 	columnLen := mysql.PutLengthEncodedInt(uint64(len(r.Fields)))
 
 	data = append(data, columnLen...)
-	total, err = c.writePacketBatch(total, data, false)
+	total, err = cc.writePacketBatch(total, data, false)
 	if err != nil {
 		return err
 	}
 
-	for _, v := range r.Fields {
+/*	fmt.Print("recive columnLen：" )
+	fmt.Println(total)*/
+
+/*	for _, v := range r.Fields {
 		data = data[0:4]
 		data = append(data, v.Dump()...)
-		total, err = c.writePacketBatch(total, data, false)
+		total, err = cc.writePacketBatch(total, data, false)
 		if err != nil {
 			return err
 		}
-	}
+	}*/
 
-	total, err = c.writeEOFBatch(total, status, false)
+	//fmt.Print("recive Fields：" )
+	//fmt.Println(total)
+
+	total, err = cc.writeEOFBatch(total, status, false)
 	if err != nil {
 		return err
 	}
+
+	//fmt.Print("recive Fields writeEOFBatch：" )
+	//fmt.Println(total)
 
 	for _, v := range r.RowDatas {
 		data = data[0:4]
 		data = append(data, v...)
-		total, err = c.writePacketBatch(total, data, false)
+		total, err = cc.writePacketBatch(total, data, false)
 		if err != nil {
 			return err
 		}
 	}
 
-	total, err = c.writeEOFBatch(total, status, true)
+/*	fmt.Print("recive RowDatas：" )
+	fmt.Println(total)*/
+
+	total, err = cc.writeEOFBatch(total, status, true)
+/*	fmt.Print("recive all：" )
+	fmt.Println(total)*/
 	total = nil
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (cc *ClientConn) writeColumnInfo(columns []*server.ColumnInfo, serverStatus uint16) error {
+	data := cc.alloc.AllocWithLen(4, 1024)
+	data = mysql.DumpLengthEncodedInt(data,uint64(len(columns)))
+	if err := cc.writePacket(data); err != nil {
+		return err
+	}
+
+	for _, v := range columns {
+		data = data[0:4]
+		data = v.Dump(data)
+		if err := cc.writePacket(data); err != nil {
+			return err
+		}
+	}
+	return cc.writeEOF(serverStatus)
+}
+
+// writeChunks writes data from a Chunk, which filled data by a ResultSet, into a connection.
+// binary specifies the way to dump data. It throws any error while dumping data.
+// serverStatus, a flag bit represents server information
+func (cc *clientConn) writeChunks(ctx context.Context, rs ResultSet, binary bool, serverStatus uint16) error {
+	data := cc.alloc.AllocWithLen(4, 1024)
+	req := rs.NewChunk()
+	gotColumnInfo := false
+	for {
+		// Here server.tidbResultSet implements Next method.
+		err := rs.Next(ctx, req)
+		if err != nil {
+			return err
+		}
+		if !gotColumnInfo {
+			// We need to call Next before we get columns.
+			// Otherwise, we will get incorrect columns info.
+			columns := rs.Columns()
+			err = cc.writeColumnInfo(columns, serverStatus)
+			if err != nil {
+				return err
+			}
+			gotColumnInfo = true
+		}
+		rowCount := req.NumRows()
+		if rowCount == 0 {
+			break
+		}
+		for i := 0; i < rowCount; i++ {
+			data = data[0:4]
+			if binary {
+				data, err = dumpBinaryRow(data, rs.Columns(), req.GetRow(i))
+			} else {
+				data, err = dumpTextRow(data, rs.Columns(), req.GetRow(i))
+			}
+			if err != nil {
+				return err
+			}
+			if err = cc.writePacket(data); err != nil {
+				return err
+			}
+		}
+	}
+	return cc.writeEOF(serverStatus)
 }

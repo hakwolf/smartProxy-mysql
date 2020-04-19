@@ -31,7 +31,7 @@ import (
 )
 
 /*处理query语句*/
-func (c *ClientConn) handleQuery(sql string) (err error) {
+func (cc *ClientConn) handleQuery(sql string) (err error) {
 	defer func() {
 		if e := recover(); e != nil {
 			golog.OutputSql("Error", "err:%v,sql:%s", e, sql)
@@ -52,7 +52,7 @@ func (c *ClientConn) handleQuery(sql string) (err error) {
 	}()
 
 	sql = strings.TrimRight(sql, ";") //删除sql语句最后的分号
-	hasHandled, err := c.preHandleShard(sql)
+	hasHandled, err := cc.preHandleShard(sql)
 	if err != nil {
 		golog.Error("server", "preHandleShard", err.Error(), 0,
 			"sql", sql,
@@ -73,39 +73,39 @@ func (c *ClientConn) handleQuery(sql string) (err error) {
 
 	switch v := stmt.(type) {
 	case *sqlparser.Select:
-		return c.handleSelect(v, nil)
+		return cc.handleSelect(v, nil)
 	case *sqlparser.Insert:
-		return c.handleExec(stmt, nil)
+		return cc.handleExec(stmt, nil)
 	case *sqlparser.Update:
-		return c.handleExec(stmt, nil)
+		return cc.handleExec(stmt, nil)
 	case *sqlparser.Delete:
-		return c.handleExec(stmt, nil)
+		return cc.handleExec(stmt, nil)
 	case *sqlparser.Replace:
-		return c.handleExec(stmt, nil)
+		return cc.handleExec(stmt, nil)
 	case *sqlparser.Set:
-		return c.handleSet(v, sql)
+		return cc.handleSet(v, sql)
 	case *sqlparser.Begin:
-		return c.handleBegin()
+		return cc.handleBegin()
 	case *sqlparser.Commit:
-		return c.handleCommit()
+		return cc.handleCommit()
 	case *sqlparser.Rollback:
-		return c.handleRollback()
+		return cc.handleRollback()
 	case *sqlparser.Admin:
-		if c.user == "root" {
-			return c.handleAdmin(v)
+		if cc.user == "root" {
+			return cc.handleAdmin(v)
 		}
 		return fmt.Errorf("statement %T not support now", stmt)
 	case *sqlparser.AdminHelp:
-		if c.user == "root" {
-			return c.handleAdminHelp(v)
+		if cc.user == "root" {
+			return cc.handleAdminHelp(v)
 		}
 		return fmt.Errorf("statement %T not support now", stmt)
 	case *sqlparser.UseDB:
-		return c.handleUseDB(v.DB)
+		return cc.handleUseDB(v.DB)
 	case *sqlparser.SimpleSelect:
-		return c.handleSimpleSelect(v)
+		return cc.handleSimpleSelect(v)
 	case *sqlparser.Truncate:
-		return c.handleExec(stmt, nil)
+		return cc.handleExec(stmt, nil)
 	default:
 		return fmt.Errorf("statement %T not support now", stmt)
 	}
@@ -113,8 +113,8 @@ func (c *ClientConn) handleQuery(sql string) (err error) {
 	return nil
 }
 
-func (c *ClientConn) getBackendConn(n *backend.Node, fromSlave bool) (co *backend.BackendConn, err error) {
-	if !c.isInTransaction() {
+func (cc *ClientConn) getBackendConn(n *backend.Node, fromSlave bool) (co *backend.BackendConn, err error) {
+	if !cc.isInTransaction() {
 		if fromSlave {
 			co, err = n.GetSlaveConn()
 			if err != nil {
@@ -129,14 +129,14 @@ func (c *ClientConn) getBackendConn(n *backend.Node, fromSlave bool) (co *backen
 		}
 	} else {
 		var ok bool
-		co, ok = c.txConns[n]
+		co, ok = cc.txConns[n]
 
 		if !ok {
 			if co, err = n.GetMasterConn(); err != nil {
 				return
 			}
 
-			if !c.isAutoCommit() {
+			if !cc.isAutoCommit() {
 				if err = co.SetAutoCommit(0); err != nil {
 					return
 				}
@@ -146,17 +146,17 @@ func (c *ClientConn) getBackendConn(n *backend.Node, fromSlave bool) (co *backen
 				}
 			}
 
-			c.txConns[n] = co
+			cc.txConns[n] = co
 		}
 	}
 
-	if err = co.UseDB(c.db); err != nil {
+	if err = co.UseDB(cc.db); err != nil {
 		//reset the database to null
-		c.db = ""
+		cc.db = ""
 		return
 	}
 
-	if err = co.SetCharset(c.charset, c.collation); err != nil {
+	if err = co.SetCharset(cc.charset, cc.collation); err != nil {
 		return
 	}
 
@@ -164,7 +164,7 @@ func (c *ClientConn) getBackendConn(n *backend.Node, fromSlave bool) (co *backen
 }
 
 //获取shard的conn，第一个参数表示是不是select
-func (c *ClientConn) getShardConns(fromSlave bool, plan *router.Plan) (map[string]*backend.BackendConn, error) {
+func (cc *ClientConn) getShardConns(fromSlave bool, plan *router.Plan) (map[string]*backend.BackendConn, error) {
 	var err error
 	if plan == nil || len(plan.RouteNodeIndexs) == 0 {
 		return nil, errors.ErrNoRouteNode
@@ -174,21 +174,21 @@ func (c *ClientConn) getShardConns(fromSlave bool, plan *router.Plan) (map[strin
 	nodes := make([]*backend.Node, 0, nodesCount)
 	for i := 0; i < nodesCount; i++ {
 		nodeIndex := plan.RouteNodeIndexs[i]
-		nodes = append(nodes, c.proxy.GetNode(plan.Rule.Nodes[nodeIndex]))
+		nodes = append(nodes, cc.proxy.GetNode(plan.Rule.Nodes[nodeIndex]))
 	}
-	if c.isInTransaction() {
+	if cc.isInTransaction() {
 		if 1 < len(nodes) {
 			return nil, errors.ErrTransInMulti
 		}
 		//exec in multi node
-		if len(c.txConns) == 1 && c.txConns[nodes[0]] == nil {
+		if len(cc.txConns) == 1 && cc.txConns[nodes[0]] == nil {
 			return nil, errors.ErrTransInMulti
 		}
 	}
 	conns := make(map[string]*backend.BackendConn)
 	var co *backend.BackendConn
 	for _, n := range nodes {
-		co, err = c.getBackendConn(n, fromSlave)
+		co, err = cc.getBackendConn(n, fromSlave)
 		if err != nil {
 			break
 		}
@@ -199,7 +199,7 @@ func (c *ClientConn) getShardConns(fromSlave bool, plan *router.Plan) (map[strin
 	return conns, err
 }
 
-func (c *ClientConn) executeInNode(conn *backend.BackendConn, sql string, args []interface{}) ([]*mysql.Result, error) {
+func (cc *ClientConn) executeInNode(conn *backend.BackendConn, sql string, args []interface{}) ([]*mysql.Result, error) {
 	var state string
 	startTime := time.Now().UnixNano()
 	r, err := conn.Execute(sql, args...)
@@ -209,12 +209,12 @@ func (c *ClientConn) executeInNode(conn *backend.BackendConn, sql string, args [
 		state = "OK"
 	}
 	execTime := float64(time.Now().UnixNano()-startTime) / float64(time.Millisecond)
-	if strings.ToLower(c.proxy.logSql[c.proxy.logSqlIndex]) != golog.LogSqlOff &&
-		execTime >= float64(c.proxy.slowLogTime[c.proxy.slowLogTimeIndex]) {
-		c.proxy.counter.IncrSlowLogTotal()
+	if strings.ToLower(cc.proxy.logSql[cc.proxy.logSqlIndex]) != golog.LogSqlOff &&
+		execTime >= float64(cc.proxy.slowLogTime[cc.proxy.slowLogTimeIndex]) {
+		cc.proxy.counter.IncrSlowLogTotal()
 		golog.OutputSql(state, "%.1fms - %s->%s:%s",
 			execTime,
-			c.c.RemoteAddr(),
+			cc.c.RemoteAddr(),
 			conn.GetAddr(),
 			sql,
 		)
@@ -227,9 +227,9 @@ func (c *ClientConn) executeInNode(conn *backend.BackendConn, sql string, args [
 	return []*mysql.Result{r}, err
 }
 
-func (c *ClientConn) executeInMultiNodes(conns map[string]*backend.BackendConn, sqls map[string][]string, args []interface{}) ([]*mysql.Result, error) {
+func (cc *ClientConn) executeInMultiNodes(conns map[string]*backend.BackendConn, sqls map[string][]string, args []interface{}) ([]*mysql.Result, error) {
 	if len(conns) != len(sqls) {
-		golog.Error("ClientConn", "executeInMultiNodes", errors.ErrConnNotEqual.Error(), c.connectionId,
+		golog.Error("ClientConn", "executeInMultiNodes", errors.ErrConnNotEqual.Error(), cc.connectionId,
 			"conns", conns,
 			"sqls", sqls,
 		)
@@ -264,12 +264,12 @@ func (c *ClientConn) executeInMultiNodes(conns map[string]*backend.BackendConn, 
 				rs[i] = r
 			}
 			execTime := float64(time.Now().UnixNano()-startTime) / float64(time.Millisecond)
-			if c.proxy.logSql[c.proxy.logSqlIndex] != golog.LogSqlOff &&
-				execTime >= float64(c.proxy.slowLogTime[c.proxy.slowLogTimeIndex]) {
-				c.proxy.counter.IncrSlowLogTotal()
+			if cc.proxy.logSql[cc.proxy.logSqlIndex] != golog.LogSqlOff &&
+				execTime >= float64(cc.proxy.slowLogTime[cc.proxy.slowLogTimeIndex]) {
+				cc.proxy.counter.IncrSlowLogTotal()
 				golog.OutputSql(state, "%.1fms - %s->%s:%s",
 					execTime,
-					c.c.RemoteAddr(),
+					cc.c.RemoteAddr(),
 					co.GetAddr(),
 					v,
 				)
@@ -303,8 +303,8 @@ func (c *ClientConn) executeInMultiNodes(conns map[string]*backend.BackendConn, 
 	return r, err
 }
 
-func (c *ClientConn) closeConn(conn *backend.BackendConn, rollback bool) {
-	if c.isInTransaction() {
+func (cc *ClientConn) closeConn(conn *backend.BackendConn, rollback bool) {
+	if cc.isInTransaction() {
 		return
 	}
 
@@ -315,8 +315,8 @@ func (c *ClientConn) closeConn(conn *backend.BackendConn, rollback bool) {
 	conn.Close()
 }
 
-func (c *ClientConn) closeShardConns(conns map[string]*backend.BackendConn, rollback bool) {
-	if c.isInTransaction() {
+func (cc *ClientConn) closeShardConns(conns map[string]*backend.BackendConn, rollback bool) {
+	if cc.isInTransaction() {
 		return
 	}
 
@@ -328,7 +328,7 @@ func (c *ClientConn) closeShardConns(conns map[string]*backend.BackendConn, roll
 	}
 }
 
-func (c *ClientConn) newEmptyResultset(stmt *sqlparser.Select) *mysql.Resultset {
+func (cc *ClientConn) newEmptyResultset(stmt *sqlparser.Select) *mysql.Resultset {
 	r := new(mysql.Resultset)
 	r.Fields = make([]*mysql.Field, len(stmt.SelectExprs))
 
@@ -355,32 +355,32 @@ func (c *ClientConn) newEmptyResultset(stmt *sqlparser.Select) *mysql.Resultset 
 	return r
 }
 
-func (c *ClientConn) handleExec(stmt sqlparser.Statement, args []interface{}) error {
-	plan, err := c.schema.rule.BuildPlan(c.db, stmt)
+func (cc *ClientConn) handleExec(stmt sqlparser.Statement, args []interface{}) error {
+	plan, err := cc.schema.rule.BuildPlan(cc.db, stmt)
 	if err != nil {
 		return err
 	}
-	conns, err := c.getShardConns(false, plan)
-	defer c.closeShardConns(conns, err != nil)
+	conns, err := cc.getShardConns(false, plan)
+	defer cc.closeShardConns(conns, err != nil)
 	if err != nil {
-		golog.Error("ClientConn", "handleExec", err.Error(), c.connectionId)
+		golog.Error("ClientConn", "handleExec", err.Error(), cc.connectionId)
 		return err
 	}
 	if conns == nil {
-		return c.writeOK(nil)
+		return cc.writeOK(nil)
 	}
 
 	var rs []*mysql.Result
 
-	rs, err = c.executeInMultiNodes(conns, plan.RewrittenSqls, args)
+	rs, err = cc.executeInMultiNodes(conns, plan.RewrittenSqls, args)
 	if err == nil {
-		err = c.mergeExecResult(rs)
+		err = cc.mergeExecResult(rs)
 	}
 
 	return err
 }
 
-func (c *ClientConn) mergeExecResult(rs []*mysql.Result) error {
+func (cc *ClientConn) mergeExecResult(rs []*mysql.Result) error {
 	r := new(mysql.Result)
 	for _, v := range rs {
 		r.Status |= v.Status
@@ -395,9 +395,9 @@ func (c *ClientConn) mergeExecResult(rs []*mysql.Result) error {
 	}
 
 	if r.InsertId > 0 {
-		c.lastInsertId = int64(r.InsertId)
+		cc.lastInsertId = int64(r.InsertId)
 	}
-	c.affectedRows = int64(r.AffectedRows)
+	cc.affectedRows = int64(r.AffectedRows)
 
-	return c.writeOK(r)
+	return cc.writeOK(r)
 }

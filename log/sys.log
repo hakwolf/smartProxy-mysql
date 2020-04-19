@@ -258,3 +258,33 @@
 2020/04/09 22:26:06 - INFO - server.go:[300] - [server] "NewServer" "Server running" "netProto=tcp|address=0.0.0.0:5000" conn_id=0
 2020/04/09 22:26:06 - INFO - server.go:[43] - [web] "NewApiServer" "Api Server running" "netProto=http|address=0.0.0.0:9797" conn_id=0
 2020/04/09 22:26:06 - INFO - prometheus.go:[41] - [prometheus] "Run" "Prometheus running" "address=0.0.0.0:7080" conn_id=0
+2020/04/09 22:42:16 - INFO - main.go:[143] - [main] "main" "Got signal" "signal=interrupt" conn_id=0
+2020/04/10 22:39:20 - INFO - server.go:[300] - [server] "NewServer" "Server running" "netProto=tcp|address=0.0.0.0:5000" conn_id=0
+2020/04/10 22:39:20 - INFO - server.go:[43] - [web] "NewApiServer" "Api Server running" "netProto=http|address=0.0.0.0:9797" conn_id=0
+2020/04/10 22:39:20 - INFO - prometheus.go:[41] - [prometheus] "Run" "Prometheus running" "address=0.0.0.0:7080" conn_id=0
+2020/04/10 23:02:42 - INFO - main.go:[143] - [main] "main" "Got signal" "signal=interrupt" conn_id=0
+2020/04/12 15:47:42 - INFO - server.go:[300] - [server] "NewServer" "Server running" "netProto=tcp|address=0.0.0.0:5000" conn_id=0
+2020/04/12 15:47:42 - INFO - server.go:[43] - [web] "NewApiServer" "Api Server running" "netProto=http|address=0.0.0.0:9797" conn_id=0
+2020/04/12 15:47:42 - INFO - prometheus.go:[41] - [prometheus] "Run" "Prometheus running" "address=0.0.0.0:7080" conn_id=0
+2020/04/12 16:40:26 - INFO - main.go:[143] - [main] "main" "Got signal" "signal=interrupt" conn_id=0
+2020/04/12 16:40:39 - INFO - server.go:[300] - [server] "NewServer" "Server running" "netProto=tcp|address=0.0.0.0:5000" conn_id=0
+2020/04/12 16:40:39 - INFO - server.go:[43] - [web] "NewApiServer" "Api Server running" "netProto=http|address=0.0.0.0:9797" conn_id=0
+2020/04/12 16:40:39 - INFO - prometheus.go:[41] - [prometheus] "Run" "Prometheus running" "address=0.0.0.0:7080" conn_id=0
+2020/04/12 17:21:58 - ERROR - conn.go:[108] - [server] "readHandshakeResponse" "connection was bad" "msg=read Handshake Response error" conn_id=10004
+2020/04/12 17:21:58 - ERROR - server.go:[386] - [server] "onConn" "connection was bad" "" conn_id=0
+2020/04/12 17:21:58 - ERROR - conn.go:[108] - [server] "readHandshakeResponse" "connection was bad" "msg=read Handshake Response error" conn_id=10005
+2020/04/12 17:21:58 - ERROR - server.go:[386] - [server] "onConn" "connection was bad" "" conn_id=0
+2020/04/12 17:21:58 - ERROR - conn.go:[108] - [server] "readHandshakeResponse" "connection was bad" "msg=read Handshake Response error" conn_id=10006
+2020/04/12 17:21:58 - ERROR - server.go:[386] - [server] "onConn" "connection was bad" "" conn_id=0
+2020/04/12 17:23:10 - INFO - main.go:[143] - [main] "main" "Got signal" "signal=interrupt" conn_id=0
+2020/04/12 17:25:55 - INFO - server.go:[300] - [server] "NewServer" "Server running" "netProto=tcp|address=0.0.0.0:5000" conn_id=0
+2020/04/12 17:25:55 - INFO - server.go:[43] - [web] "NewApiServer" "Api Server running" "netProto=http|address=0.0.0.0:9797" conn_id=0
+2020/04/12 17:25:55 - INFO - prometheus.go:[41] - [prometheus] "Run" "Prometheus running" "address=0.0.0.0:7080" conn_id=0
+2020/04/12 17:34:40 - INFO - main.go:[143] - [main] "main" "Got signal" "signal=interrupt" conn_id=0
+2020/04/12 17:34:54 - INFO - server.go:[300] - [server] "NewServer" "Server running" "netProto=tcp|address=0.0.0.0:5000" conn_id=0
+2020/04/12 17:34:54 - INFO - server.go:[43] - [web] "NewApiServer" "Api Server running" "netProto=http|address=0.0.0.0:9797" conn_id=0
+2020/04/12 17:34:54 - INFO - prometheus.go:[41] - [prometheus] "Run" "Prometheus running" "address=0.0.0.0:7080" conn_id=0
+2020/04/12 17:44:33 - INFO - main.go:[143] - [main] "main" "Got signal" "signal=interrupt" conn_id=0
+2020/04/13 21:41:49 - INFO - server.go:[300] - [server] "NewServer" "Server running" "netProto=tcp|address=0.0.0.0:5000" conn_id=0
+2020/04/13 21:41:49 - INFO - server.go:[43] - [web] "NewApiServer" "Api Server running" "netProto=http|address=0.0.0.0:9797" conn_id=0
+2020/04/13 21:41:49 - INFO - prometheus.go:[41] - [prometheus] "Run" "Prometheus running" "address=0.0.0.0:7080" conn_id=0

@@ -1,10 +1,10 @@
-#  SmartPo [中文主页](README_ZH.md)
+#  kingshard [中文主页](README_ZH.md)
 
 [![Build Status](https://travis-ci.org/flike/kingshard.svg?branch=master)](https://travis-ci.org/flike/kingshard)
 
 ## Overview
 
-SmartPo is a high-performance proxy for MySQL powered by Go. Just like other mysql proxies, you can use it to split the read/write sqls. Now it supports basic SQL statements (select, insert, update, replace, delete). The most important feature is the sharding function. SmartPo aims to simplify the sharding solution of MySQL. **The Performance of SmartPo is about 80% compared to connecting to MySQL directly.**
+kingshard is a high-performance proxy for MySQL powered by Go. Just like other mysql proxies, you can use it to split the read/write sqls. Now it supports basic SQL statements (select, insert, update, replace, delete). The most important feature is the sharding function. Kingshard aims to simplify the sharding solution of MySQL. **The Performance of kingshard is about 80% compared to connecting to MySQL directly.**
 
 ## Feature
 
@@ -31,18 +31,18 @@ SmartPo is a high-performance proxy for MySQL powered by Go. Just like other mys
 ## Install
 ```
   1. Install Go
-  2. git clone https://github.com/hakwolf/smartProxy-mysql.git $GOPATH/src/github.com/hakwolf/smartProxy-mysql
-  3. cd $GOPATH/src/github.com/hakwolf/smartProxy-mysql
+  2. git clone https://github.com/flike/kingshard.git $GOPATH/src/github.com/flike/kingshard
+  3. cd $GOPATH/src/github.com/flike/kingshard
   4. source ./dev.sh
   5. make
   6. set the config file (etc/ks.yaml)
-  7. run smartPo (./bin/smartPo -config=etc/ks.yaml)
+  7. run kingshard (./bin/kingshard -config=etc/ks.yaml)
 ```
 
-# Details of SmartPo
+# Details of kingshard
 
-[1.How to use SmartPo building a MySQL cluster](./doc/KingDoc/how_to_use_kingshard_EN.md)
+[1.How to use kingshard building a MySQL cluster](./doc/KingDoc/how_to_use_kingshard_EN.md)
 
 ## License
 
-SmartPo is under the Apache 2.0 license. See the [LICENSE](./doc/License) directory for details.
+kingshard is under the Apache 2.0 license. See the [LICENSE](./doc/License) directory for details.

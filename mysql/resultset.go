@@ -21,6 +21,7 @@ import (
 	"strconv"
 
 	"github.com/hakwolf/smartProxy-mysql/core/hack"
+	"github.com/pingcap/tidb/server"
 )
 
 type RowData []byte
@@ -271,7 +272,8 @@ type Result struct {
 }
 
 type Resultset struct {
-	Fields     []*Field
+	//Fieldbaks     []*Field
+	Fields     []* server.ColumnInfo
 	FieldNames map[string]int
 	Values     [][]interface{}
 
