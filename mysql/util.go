@@ -145,6 +145,38 @@ func DumpLengthEncodedInt(buffer []byte, n uint64) []byte {
 }
 
 
+func DumpLengthEncodedString(buffer []byte, bytes []byte) []byte {
+	buffer = DumpLengthEncodedInt(buffer, uint64(len(bytes)))
+	buffer = append(buffer, bytes...)
+	return buffer
+}
+
+func DumpUint16(buffer []byte, n uint16) []byte {
+	buffer = append(buffer, byte(n))
+	buffer = append(buffer, byte(n>>8))
+	return buffer
+}
+
+func DumpUint32(buffer []byte, n uint32) []byte {
+	buffer = append(buffer, byte(n))
+	buffer = append(buffer, byte(n>>8))
+	buffer = append(buffer, byte(n>>16))
+	buffer = append(buffer, byte(n>>24))
+	return buffer
+}
+
+func DumpUint64(buffer []byte, n uint64) []byte {
+	buffer = append(buffer, byte(n))
+	buffer = append(buffer, byte(n>>8))
+	buffer = append(buffer, byte(n>>16))
+	buffer = append(buffer, byte(n>>24))
+	buffer = append(buffer, byte(n>>32))
+	buffer = append(buffer, byte(n>>40))
+	buffer = append(buffer, byte(n>>48))
+	buffer = append(buffer, byte(n>>56))
+	return buffer
+}
+
 func LengthEnodedString(b []byte) ([]byte, bool, int, error) {
 	// Get length
 	num, isNull, n := LengthEncodedInt(b)

@@ -26,7 +26,7 @@ import (
 	"github.com/hakwolf/smartProxy-mysql/core/golog"
 	"github.com/hakwolf/smartProxy-mysql/core/hack"
 	"github.com/hakwolf/smartProxy-mysql/mysql"
-	"github.com/pingcap/tidb/util/arena"
+	"github.com/hakwolf/smartProxy-mysql/util/arena"
 )
 
 //client <-> proxy
