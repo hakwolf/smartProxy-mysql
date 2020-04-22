@@ -11,9 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package server
-
-import "github.com/hakwolf/smartProxy-mysql/mysql"
+package mysql
 
 // ColumnInfo contains information of a column
 type ColumnInfo struct {
@@ -33,24 +31,24 @@ type ColumnInfo struct {
 
 // Dump dumps ColumnInfo to bytes.
 func (column *ColumnInfo) Dump(buffer []byte) []byte {
-	buffer = mysql.DumpLengthEncodedString(buffer, []byte("def"))
-	buffer = mysql.DumpLengthEncodedString(buffer, []byte(column.Schema))
-	buffer = mysql.DumpLengthEncodedString(buffer, []byte(column.Table))
-	buffer = mysql.DumpLengthEncodedString(buffer, []byte(column.OrgTable))
-	buffer = mysql.DumpLengthEncodedString(buffer, []byte(column.Name))
-	buffer = mysql.DumpLengthEncodedString(buffer, []byte(column.OrgName))
+	buffer = DumpLengthEncodedString(buffer, []byte("def"))
+	buffer = DumpLengthEncodedString(buffer, []byte(column.Schema))
+	buffer = DumpLengthEncodedString(buffer, []byte(column.Table))
+	buffer = DumpLengthEncodedString(buffer, []byte(column.OrgTable))
+	buffer = DumpLengthEncodedString(buffer, []byte(column.Name))
+	buffer = DumpLengthEncodedString(buffer, []byte(column.OrgName))
 
 	buffer = append(buffer, 0x0c)
 
-	buffer = mysql.DumpUint16(buffer, column.Charset)
-	buffer = mysql.DumpUint32(buffer, column.ColumnLength)
+	buffer = DumpUint16(buffer, column.Charset)
+	buffer = DumpUint32(buffer, column.ColumnLength)
 	buffer = append(buffer, dumpType(column.Type))
-	buffer = mysql.DumpUint16(buffer, dumpFlag(column.Type, column.Flag))
+	buffer = DumpUint16(buffer, dumpFlag(column.Type, column.Flag))
 	buffer = append(buffer, column.Decimal)
 	buffer = append(buffer, 0, 0)
 
 	if column.DefaultValue != nil {
-		buffer = mysql.DumpUint64(buffer, uint64(len(column.DefaultValue)))
+		buffer = DumpUint64(buffer, uint64(len(column.DefaultValue)))
 		buffer = append(buffer, column.DefaultValue...)
 	}
 
@@ -59,13 +57,13 @@ func (column *ColumnInfo) Dump(buffer []byte) []byte {
 
 func dumpFlag(tp byte, flag uint16) uint16 {
 	switch tp {
-	case mysql.TypeSet:
-		return flag | uint16(mysql.SetFlag)
-	case mysql.TypeEnum:
-		return flag | uint16(mysql.EnumFlag)
+	case TypeSet:
+		return flag | uint16(SetFlag)
+	case TypeEnum:
+		return flag | uint16(EnumFlag)
 	default:
-		if mysql.HasBinaryFlag(uint(flag)) {
-			return flag | uint16(mysql.NotNullFlag)
+		if HasBinaryFlag(uint(flag)) {
+			return flag | uint16(NotNullFlag)
 		}
 		return flag
 	}
@@ -73,8 +71,8 @@ func dumpFlag(tp byte, flag uint16) uint16 {
 
 func dumpType(tp byte) byte {
 	switch tp {
-	case mysql.TypeSet, mysql.TypeEnum:
-		return mysql.TypeString
+	case TypeSet, TypeEnum:
+		return TypeString
 	default:
 		return tp
 	}

@@ -22,7 +22,6 @@ import (
 	"github.com/hakwolf/smartProxy-mysql/core/errors"
 	"github.com/hakwolf/smartProxy-mysql/core/hack"
 	"github.com/hakwolf/smartProxy-mysql/mysql"
-	"github.com/pingcap/tidb/server"
 )
 
 func formatValue(value interface{}) ([]byte, error) {
@@ -63,7 +62,7 @@ func formatValue(value interface{}) ([]byte, error) {
 	}
 }
 
-func formatField(field *server.ColumnInfo, value interface{}) error {   //func formatField(field *mysql.Field, value interface{}) error {
+func formatField(field *mysql.ColumnInfo, value interface{}) error {   //func formatField(field *mysql.Field, value interface{}) error {
 	switch value.(type) {
 	case int8, int16, int32, int64, int:
 		field.Charset = 63
@@ -87,11 +86,11 @@ func formatField(field *server.ColumnInfo, value interface{}) error {   //func f
 }
 
 //func (cc *ClientConn) buildResultset(fields []*mysql.Field, names []string, values [][]interface{}) (*mysql.Resultset, error) {
-func (cc *ClientConn) buildResultset(fields []*server.ColumnInfo, names []string, values [][]interface{}) (*mysql.Resultset, error) {
+func (cc *ClientConn) buildResultset(fields []*mysql.ColumnInfo, names []string, values [][]interface{}) (*mysql.Resultset, error) {
 	var ExistFields bool
 	r := new(mysql.Resultset)
 
-	r.Fields = make([]*server.ColumnInfo, len(names))  //r.Fields = make([]*mysql.Field, len(names))
+	r.Fields = make([]*mysql.ColumnInfo, len(names))  //r.Fields = make([]*mysql.Field, len(names))
 	r.FieldNames = make(map[string]int, len(names))
 
 	//use the field def that get from true database
@@ -119,7 +118,7 @@ func (cc *ClientConn) buildResultset(fields []*server.ColumnInfo, names []string
 					r.Fields[j] = fields[j]
 					r.FieldNames[string(r.Fields[j].Name)] = j
 				} else {
-					field := &server.ColumnInfo{}  //field := &mysql.Field{}
+					field := &mysql.ColumnInfo{}  //field := &mysql.Field{}
 					r.Fields[j] = field
 					r.FieldNames[string(r.Fields[j].Name)] = j
 					field.Name = names[j]  //field.Name = hack.Slice(names[j])
@@ -205,7 +204,7 @@ func (cc *ClientConn) writeResultset(status uint16, r *mysql.Resultset) error {
 	return nil
 }
 
-func (cc *ClientConn) writeColumnInfo(columns []*server.ColumnInfo, serverStatus uint16) error {
+func (cc *ClientConn) writeColumnInfo(columns []*mysql.ColumnInfo, serverStatus uint16) error {
 	data := cc.alloc.AllocWithLen(4, 1024)
 	data = mysql.DumpLengthEncodedInt(data,uint64(len(columns)))
 	if err := cc.writePacket(data); err != nil {
