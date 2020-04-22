@@ -21,10 +21,6 @@ require (
 	github.com/labstack/gommon v0.3.0
 	github.com/ngaut/pools v0.0.0-20180318154953-b7bc8c42aac7 // indirect
 	github.com/ngaut/sync2 v0.0.0-20141008032647-7a24ed77b2ef // indirect
-	github.com/pingcap/goleveldb v0.0.0-20191226122134-f82aafb29989 // indirect
-	github.com/pingcap/kvproto v0.0.0-20200420075417-e0c6e8842f22 // indirect
-	github.com/pingcap/tidb v2.0.11+incompatible
-	github.com/pingcap/tipb v0.0.0-20200417094153-7316d94df1ee // indirect
 	github.com/prometheus/client_golang v1.2.1
 	github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
